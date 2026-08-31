@@ -8,7 +8,7 @@ import {
   normalizeConversations,
 } from "@/lib/inbox/conversations";
 import { cn } from "@/lib/utils";
-import type { Conversation, ConversationStatus, Tag } from "@/types";
+import type { Conversation, ConversationStatus, Tag, Channel } from "@/types";
 import { Search, ChevronDown, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
@@ -46,6 +46,15 @@ const STATUS_COLORS: Record<ConversationStatus, string> = {
 
 type InboxFilter = ConversationStatus | "all" | "unread";
 
+const CHANNEL_OPTIONS: { label: string; value: Channel | "all" }[] = [
+  { label: "All channels", value: "all" },
+  { label: "WhatsApp", value: "whatsapp" },
+  { label: "Instagram", value: "instagram" },
+  { label: "Messenger", value: "messenger" },
+  { label: "Email", value: "email" },
+  { label: "Web chat", value: "webchat" },
+];
+
 export function ConversationList({
   activeConversationId,
   onSelect,
@@ -65,6 +74,7 @@ export function ConversationList({
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<InboxFilter>("all");
+  const [channelFilter, setChannelFilter] = useState<Channel | "all">("all");
   const [loading, setLoading] = useState(true);
   // Contact-based filters (issue #272). Tags use OR logic (a conversation
   // matches if its contact carries any selected tag), consistent with
@@ -167,6 +177,13 @@ export function ConversationList({
       result = result.filter((c) => c.status === filter);
     }
 
+    // Omnichannel filter (migration 040). `channel` is undefined on rows
+    // serialized before the column was added / backfilled, so treat an
+    // undefined channel as WhatsApp (the historical default).
+    if (channelFilter !== "all") {
+      result = result.filter((c) => (c.channel ?? "whatsapp") === channelFilter);
+    }
+
     // Contact-based filters (tags via OR logic, exact company match).
     if (selectedTagIds.length > 0 || selectedCompany !== null) {
       result = result.filter((c) =>
@@ -188,7 +205,7 @@ export function ConversationList({
     }
 
     return result;
-  }, [conversations, filter, search, selectedTagIds, selectedCompany]);
+  }, [conversations, filter, search, selectedTagIds, selectedCompany, channelFilter]);
 
   const toggleTag = useCallback((id: string) => {
     setSelectedTagIds((prev) =>
@@ -253,6 +270,32 @@ export function ConversationList({
                   className={cn(
                     "text-sm",
                     filter === opt.value
+                      ? "text-primary"
+                      : "text-popover-foreground"
+                  )}
+                >
+                  {opt.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground rounded-md hover:bg-muted">
+                {CHANNEL_OPTIONS.find((o) => o.value === channelFilter)?.label ?? "All channels"}
+                <ChevronDown className="h-3 w-3" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="border-border bg-popover"
+            >
+              {CHANNEL_OPTIONS.map((opt) => (
+                <DropdownMenuItem
+                  key={opt.value}
+                  onClick={() => setChannelFilter(opt.value)}
+                  className={cn(
+                    "text-sm",
+                    channelFilter === opt.value
                       ? "text-primary"
                       : "text-popover-foreground"
                   )}

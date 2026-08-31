@@ -22,11 +22,16 @@ type RawConversation = Omit<Conversation, "contact"> & {
  */
 export function normalizeConversation(raw: RawConversation): Conversation {
   const rawContact = raw.contact;
-  if (!rawContact) return raw as Conversation;
+  // Every conversation belongs to a channel; legacy WhatsApp rows have the
+  // DB default 'whatsapp' but may be missing on the object. Expose a
+  // defined channel so AI agents / integrations / routing always see it.
+  const channel = raw.channel ?? 'whatsapp';
+  if (!rawContact) return { ...raw, channel } as Conversation;
 
   const { contact_tags, ...contact } = rawContact;
   return {
     ...raw,
+    channel,
     contact: {
       ...contact,
       tags: (contact_tags ?? [])

@@ -13,6 +13,9 @@ import type { Conversation, Message } from '@/types';
 export interface ApiConversation {
   id: string;
   contact_id: string;
+  /** Which channel this conversation is on: whatsapp | instagram |
+   *  messenger | email | webchat (defaults to 'whatsapp'). */
+  channel: string;
   status: string;
   assigned_agent_id: string | null;
   last_message_text: string | null;
@@ -33,6 +36,7 @@ export interface ApiConversation {
 export interface ApiMessage {
   id: string;
   conversation_id: string;
+  channel: string;
   direction: 'inbound' | 'outbound';
   sender_type: string;
   content_type: string;
@@ -55,6 +59,7 @@ export function serializeConversation(conv: Conversation): ApiConversation {
   return {
     id: conv.id,
     contact_id: conv.contact_id,
+    channel: conv.channel ?? 'whatsapp',
     status: conv.status,
     assigned_agent_id: conv.assigned_agent_id ?? null,
     last_message_text: conv.last_message_text ?? null,
@@ -84,6 +89,7 @@ export function serializeMessage(m: Message): ApiMessage {
   return {
     id: m.id,
     conversation_id: m.conversation_id,
+    channel: m.channel ?? 'whatsapp',
     // `customer` = inbound (from the contact); anything else is outbound.
     direction: m.sender_type === 'customer' ? 'inbound' : 'outbound',
     sender_type: m.sender_type,
