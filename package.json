@@ -1,8 +1,8 @@
 {
   "name": "wacrm",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
-  "description": "Self-hostable CRM template for WhatsApp built on Next.js and Supabase — shared inbox, contacts, sales pipelines, broadcasts, and no-code automations.",
+  "description": "Self-hostable omnichannel CRM (WhatsApp, Instagram, Messenger, Email, Webchat) built on Next.js and Supabase — shared inbox, contacts, sales pipelines, broadcasts, no-code automations, and an AI Co-Founder.",
   "license": "MIT",
   "author": "Arnas Donauskas",
   "homepage": "https://github.com/ArnasDon/wacrm",

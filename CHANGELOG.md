@@ -9,6 +9,44 @@ Versions follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Pre-1.0, `MINOR` bumps cover new modules; `PATCH` bumps cover bug fixes
 and polish.
 
+## [0.9.0] — 2026-09-01
+
+Turns wacrm into an **omnichannel** CRM with an **AI business operating
+system**. Conversations are no longer WhatsApp-only: add Instagram,
+Messenger, email (SMTP/IMAP) or an embeddable webchat widget, all flowing
+into the same unified inbox. Alongside it, a business-owner-level AI
+Co-Founder manages a team of specialized AI Employees (Sales, Marketing,
+Support, Operations, Social, Finance, HR, or custom roles) that work off
+your account context on a schedule.
+
+> **Migration required:** apply, in order, `supabase/migrations/040_omnichannel.sql`,
+> `041_ai_agents.sql`, `042_ai_tasks.sql`, `043_agent_activity.sql`,
+> `044_ai_agents_cron.sql`, `045_omnichannel_contacts.sql`, and
+> `046_ai_config_gemini.sql` against your Supabase project before
+> restarting the app.
+
+### Added
+
+- **Omnichannel channels.** Conversations and messages are now
+  channel-aware (`whatsapp`, `instagram`, `messenger`, `email`,
+  `webchat`); existing WhatsApp rows are backfilled automatically. New
+  channels: **Instagram** and **Messenger** (Meta APIs), **Email** (SMTP
+  send + IMAP poll), and a **Webchat widget** with an embeddable snippet.
+  Configure credentials under **Settings → Channels**; per-account
+  credentials are stored AES-256-GCM encrypted.
+- **Unified inbox filter.** The inbox filters by channel, and outbound
+  replies route through the correct channel automatically.
+- **AI Co-Founder & AI Employees.** An org tree (Co-Founder managing
+  employees) with per-employee instructions, responsibilities, a tool
+  allow-list, and pause/resume. A scheduler drives the worker; activity
+  is logged and reviewable.
+- **Google Gemini as an AI provider.** Selectable in **AI Agents →
+  Setup** alongside OpenAI and Anthropic (default model
+  `gemini-3.6-flash`).
+- **Channel-aware AI replies.** AI drafts and auto-replies now adapt
+  their tone and guidance to the channel the conversation is on.
+- **Public API exposes `channel`** on conversations and messages.
+
 ## [0.8.1] — 2026-07-10
 
 Fixes inbound chats fragmenting into multiple threads for the same
