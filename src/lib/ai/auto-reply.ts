@@ -69,7 +69,7 @@ export async function dispatchInboundToAiReply(
 
     const { data: conv, error: convErr } = await db
       .from('conversations')
-      .select('assigned_agent_id, ai_autoreply_disabled, ai_reply_count')
+      .select('channel, assigned_agent_id, ai_autoreply_disabled, ai_reply_count')
       .eq('id', conversationId)
       .maybeSingle()
     if (convErr || !conv) return
@@ -110,6 +110,7 @@ export async function dispatchInboundToAiReply(
       userPrompt: config.systemPrompt,
       mode: 'auto_reply',
       knowledge,
+      channel: (conv as { channel?: string } | null)?.channel ?? 'whatsapp',
     })
 
     const { text, handoff, usage } = await generateReply({

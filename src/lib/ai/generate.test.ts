@@ -192,3 +192,75 @@ describe('generateReply — Anthropic', () => {
     expect(body.messages).toHaveLength(1)
   })
 })
+
+describe('generateReply — Gemini', () => {
+  it('calls generateContent with the goog key header and normalizes usage', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      okResponse({
+        candidates: [
+          { content: { parts: [{ text: 'Sure thing!' }] } },
+        ],
+        usageMetadata: {
+          promptTokenCount: 40,
+          candidatesTokenCount: 9,
+          totalTokenCount: 49,
+        },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const res = await generateReply({
+      config: config({ provider: 'gemini', apiKey: 'AIza-test' }),
+      systemPrompt: 'sys',
+      messages: [{ role: 'user', content: 'Can you help?' }],
+    })
+
+    expect(res).toEqual({
+      text: 'Sure thing!',
+      handoff: false,
+      usage: { promptTokens: 40, completionTokens: 9, totalTokens: 49 },
+    })
+    const [url, opts] = fetchMock.mock.calls[0]
+    expect(url).toContain('generativelanguage.googleapis.com')
+    expect(url).toContain(':generateContent')
+    expect(opts.headers['x-goog-api-key']).toBe('AIza-test')
+    const body = JSON.parse(opts.body)
+    expect(body.contents[0].role).toBe('user')
+    expect(body.systemInstruction.parts[0].text).toBe('sys')
+  })
+
+  it('maps assistant turns onto the model role and drops a leading assistant turn', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(okResponse({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await generateReply({
+      config: config({ provider: 'gemini' }),
+      systemPrompt: 'sys',
+      messages: [
+        { role: 'assistant', content: 'Welcome!' },
+        { role: 'user', content: 'Hi' },
+        { role: 'assistant', content: 'How can I help?' },
+      ],
+    })
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.contents).toHaveLength(2)
+    expect(body.contents.map((c: { role: string }) => c.role)).toEqual(['user', 'model'])
+  })
+
+  it('maps a 401 to an invalid_key AiError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(errResponse(401, { error: { message: 'API key not valid' } })),
+    )
+    await expect(
+      generateReply({
+        config: config({ provider: 'gemini' }),
+        systemPrompt: 'sys',
+        messages: [{ role: 'user', content: 'Hi' }],
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_key', status: 401 })
+  })
+})

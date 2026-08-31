@@ -484,16 +484,30 @@ export function MessageThread({
       setReplyTo(null);
 
       try {
-        const res = await fetch("/api/whatsapp/send", {
+        // Omnichannel: non-WhatsApp conversations route through the generic
+      // channel dispatcher; WhatsApp keeps its dedicated send path.
+      const isNonWhatsApp =
+        conversation.channel && conversation.channel !== "whatsapp";
+      const res = await fetch(
+        isNonWhatsApp ? "/api/channels/send" : "/api/whatsapp/send",
+        {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            conversation_id: conversation.id,
-            message_type: "text",
-            content_text: text,
-            reply_to_message_id: replyToId,
-          }),
-        });
+          body: JSON.stringify(
+            isNonWhatsApp
+              ? {
+                  conversation_id: conversation.id,
+                  content_text: text,
+                }
+              : {
+                  conversation_id: conversation.id,
+                  message_type: "text",
+                  content_text: text,
+                  reply_to_message_id: replyToId,
+                }
+          ),
+        }
+      );
 
         const payload = await res.json().catch(() => ({}));
 

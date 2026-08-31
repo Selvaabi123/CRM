@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     // row means "not yours / not found" either way.
     const { data: conversation, error: convErr } = await supabase
       .from('conversations')
-      .select('id')
+      .select('id, channel')
       .eq('id', conversationId)
       .maybeSingle()
     if (convErr) {
@@ -102,6 +102,9 @@ export async function POST(request: Request) {
       userPrompt: config.systemPrompt,
       mode: 'draft',
       knowledge,
+      channel:
+        (conversation as unknown as { channel?: string } | null)?.channel ??
+        'whatsapp',
     })
 
     const { text, usage } = await generateReply({ config, systemPrompt, messages })
